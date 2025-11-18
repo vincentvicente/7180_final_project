@@ -1,0 +1,33 @@
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Machine learning models
+xgboost>=2.0.0
+lightgbm>=4.0.0
+imbalanced-learn>=0.11.0
+
+# Text processing
+nltk>=3.8.0
+gensim>=4.3.0
+textblob>=0.17.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Web app
+streamlit>=1.25.0
+
+# Utility libs
+joblib>=1.3.0
+python-dotenv>=1.0.0
+tqdm>=4.65.0
+
+# Jupyter
+jupyter>=1.0.0
+ipykernel>=6.25.0
+ipywidgets>=8.1.0
+
