@@ -12,6 +12,8 @@ Implements multiple strategies for handling imbalanced data:
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any
+from sklearn.metrics import f1_score
+import os
 import joblib
 
 from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
@@ -83,7 +85,7 @@ class ModelTrainer:
                       X_train: pd.DataFrame,
                       X_test: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Scale features using StandardScaler.
+        Scale features using StandardScaler, assuming the input data is clean (no NaNs or strings).
         
         Args:
             X_train: Training features
@@ -92,22 +94,36 @@ class ModelTrainer:
         Returns:
             Tuple of (X_train_scaled, X_test_scaled)
         """
-        X_train_scaled = self.scaler.fit_transform(X_train)
-        X_test_scaled = self.scaler.transform(X_test)
+        # Define numerical columns. Assuming these are the only ones requiring scaling.
+        numerical_cols = ['funding_total_usd', 'company_age'] 
         
-        # Convert back to DataFrame
-        X_train_scaled = pd.DataFrame(
-            X_train_scaled,
-            columns=X_train.columns,
+        # 1. Fit scaler on training data and transform both
+        X_train_scaled_vals = self.scaler.fit_transform(X_train[numerical_cols])
+        X_test_scaled_vals = self.scaler.transform(X_test[numerical_cols])
+        
+        # 2. Convert scaled values back to DataFrame
+        X_train_scaled_df = pd.DataFrame(
+            X_train_scaled_vals,
+            columns=numerical_cols,
             index=X_train.index
         )
-        X_test_scaled = pd.DataFrame(
-            X_test_scaled,
-            columns=X_test.columns,
+        X_test_scaled_df = pd.DataFrame(
+            X_test_scaled_vals,
+            columns=numerical_cols,
             index=X_test.index
         )
         
-        return X_train_scaled, X_test_scaled
+        # 3. Identify categorical/OHE features (everything not numerical)
+        categorical_cols = X_train.columns.difference(numerical_cols)
+        
+        # 4. Reconstruct the full scaled DataFrames (scaled numerical + original OHE/categorical)
+        X_train_final = pd.concat([X_train_scaled_df, X_train[categorical_cols]], axis=1)
+        X_test_final = pd.concat([X_test_scaled_df, X_test[categorical_cols]], axis=1)
+        
+        # 5. Ensure column order consistency
+        X_test_final = X_test_final[X_train_final.columns]
+        
+        return X_train_final, X_test_final
     
     def handle_imbalance_smote(self,
                                X_train: pd.DataFrame,
@@ -125,6 +141,13 @@ class ModelTrainer:
         Returns:
             Tuple of (X_resampled, y_resampled)
         """
+        # !!!Drop rows with NaN values (temp)
+        df = pd.DataFrame(X_train)
+        df['target'] = y_train.values if hasattr(y_train, 'values') else y_train
+        df = df.dropna()
+        X_train = df.drop('target', axis=1)
+        y_train = df['target']
+
         smote = SMOTE(random_state=self.random_state, sampling_strategy=sampling_strategy)
         X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
         
@@ -430,3 +453,54 @@ class ModelTrainer:
         print(f"Model loaded from {filepath}")
         return model
 
+    def select_and_save_best_artifacts(self,
+                                       X_test: pd.DataFrame,
+                                       y_test: pd.Series,
+                                       metric: str = 'f1_weighted',
+                                       base_path: str = 'models') -> None:
+        """
+        Selects the best model based on a metric, saves the best model, 
+        its scaler, and the feature list for app deployment.
+        
+        Args:
+            X_test: Scaled test features.
+            y_test: Test target labels.
+            metric: The metric to optimize for (default: f1_weighted).
+            base_path: Directory to save artifacts.
+        """
+        
+        best_score = -1
+        self.best_model_name = None
+        self.best_model = None
+        
+        # Determine best model based on F1-weighted score on test set
+        for model_name, model in self.models.items():
+            y_pred = model.predict(X_test)
+            # Use F1-weighted for general comparison in imbalanced setting
+            score = f1_score(y_test, y_pred, average='weighted')
+            
+            if score > best_score:
+                best_score = score
+                self.best_model = model
+                self.best_model_name = model_name
+        
+        if self.best_model_name:
+            print(f"\n✨ Best Model Selected: {self.best_model_name} ({metric} Score: {best_score:.4f})")
+            
+            os.makedirs(base_path, exist_ok=True)
+            
+            # 1. Save the best model (Used by app.py for prediction)
+            model_path = os.path.join(base_path, 'final_best_model.joblib')
+            joblib.dump(self.best_model, model_path)
+            
+            # 2. Save the scaler (Crucial for app.py to scale new input)
+            scaler_path = os.path.join(base_path, 'final_scaler.joblib')
+            joblib.dump(self.scaler, scaler_path)
+            
+            # 3. Save feature list (Crucial for app.py to ensure correct feature order)
+            features_path = os.path.join(base_path, 'final_features.joblib')
+            joblib.dump(X_test.columns.tolist(), features_path)
+            
+            print(f"✅ Best model artifacts saved to {base_path}/ (Model, Scaler, Features)")
+        else:
+            print("Warning: Could not select/save best model.")

@@ -50,45 +50,127 @@ class DataPreprocessor:
         
         return df_clean
     
-    def handle_missing_values(self, 
-                             df: pd.DataFrame,
-                             numeric_strategy: str = 'median',
-                             categorical_strategy: str = 'unknown') -> pd.DataFrame:
+
+    def clean_yc_data(self, df_yc: pd.DataFrame) -> pd.DataFrame:
+        # delete unnecessary columns
+        columns_to_drop = [
+            "active_founders", "batch", "jobs", "logo",
+            "long_description", "short_description", "website", "team_size", "tags"
+        ]
+        df_yc.drop(columns=columns_to_drop, inplace=True, errors='ignore')
+
+        # handle 'founded' column: convert to company age
+        current_year = 2025
+        if "founded" in df_yc.columns:
+            df_yc["company_age"] = current_year - pd.to_numeric(df_yc["founded"], errors="coerce")
+            df_yc.drop(columns=["founded"], inplace=True, errors='ignore')
+
+            # Combine location and region into a unified location_combined column
+            df_yc["location_combined"] = df_yc["location"]
+            df_yc["location_combined"] = df_yc["location_combined"].fillna(df_yc["region"])
+            df_yc["location_combined"] = df_yc["location_combined"].fillna("Unknown")
+
+            # Drop original location columns
+            df_yc.drop(columns=["location", "region"], inplace=True)
+
+        # Fill missing company_age with median
+        df_yc["company_age"] = df_yc["company_age"].fillna(df_yc["company_age"].median())
+
+        return df_yc
+    
+    def clean_cb_data(self, df_cb: pd.DataFrame) -> pd.DataFrame:
+        # Drop unnecessary columns
+        columns_to_drop = [
+            "permalink", "homepage_url", "funding_rounds",
+            "last_funding_at"
+        ]
+        df_cb.drop(columns=columns_to_drop, inplace=True, errors="ignore")
+
+        # Combine location columns into a new column called 'location_combined'
+        df_cb["location_combined"] = df_cb["city"]
+        df_cb["location_combined"] = df_cb["location_combined"].fillna(df_cb["region"])
+        df_cb["location_combined"] = df_cb["location_combined"].fillna(df_cb["state_code"])
+        df_cb["location_combined"] = df_cb["location_combined"].fillna(df_cb["country_code"])
+        df_cb["location_combined"] = df_cb["location_combined"].fillna("Unknown")
+
+        # Drop original geographic columns
+        df_cb.drop(columns=["country_code", "state_code", "region", "city"], inplace=True)
+
+        # Handle founding date
+        if "founded_at" not in df_cb.columns and "first_funding_at" not in df_cb.columns:
+            return df_cb  # nothing to process
+
+        # Fill 'founded_at' with 'first_funding_at' if missing
+        if "founded_at" in df_cb.columns and "first_funding_at" in df_cb.columns:
+            df_cb["founded_at"] = df_cb["founded_at"].fillna(df_cb["first_funding_at"])
+        elif "founded_at" not in df_cb.columns and "first_funding_at" in df_cb.columns:
+            df_cb["founded_at"] = df_cb["first_funding_at"]
+
+        # Extract year and compute company age
+        current_year = 2025
+        df_cb["founded_year"] = pd.to_datetime(df_cb["founded_at"], errors="coerce").dt.year
+        df_cb["company_age"] = current_year - df_cb["founded_year"]
+
+        df_cb.drop(columns=["founded_at", "first_funding_at", "founded_year"], inplace=True, errors="ignore")
+
+        # Fill missing values in 'category_list' with 'Other'
+        if "category_list" in df_cb.columns:
+            df_cb["category_list"] = df_cb["category_list"].fillna("Other")
+
+        # Fill missing values in 'company_age' with median
+        if "company_age" in df_cb.columns:
+            df_cb["company_age"] = df_cb["company_age"].fillna(df_cb["company_age"].median())
+
+        # Drop rows where 'name' is missing
+        df_cb.dropna(subset=["name"], inplace=True)
+
+        # Replace dash-like values in FoundingTotalUSD with NaN early
+        if "funding_total_usd" in df_cb.columns:
+            df_cb["funding_total_usd"] = (
+                df_cb["funding_total_usd"]
+                    .astype(str)
+                    .str.strip()
+                    .replace(
+                        to_replace=[
+                            r'^\s*[-–—−]+\s*$',   # All dash types
+                            r'^\s*$',            # Empty or whitespace
+                            r'None',             # Literal None
+                            r'N/A'               # Literal N/A
+                        ],
+                        value=np.nan,
+                        regex=True
+                    )
+            )
+
+        return df_cb
+    
+    
+    def fill_missing_funding_total(self, df: pd.DataFrame, cb_df: pd.DataFrame) -> pd.DataFrame:
         """
-        Handle missing values in the dataset.
-        
-        Args:
-            df: Input DataFrame
-            numeric_strategy: Strategy for numeric columns ('mean', 'median', 'drop')
-            categorical_strategy: Strategy for categorical columns ('mode', 'unknown', 'drop')
-            
+        Fill missing 'funding_total_usd' values in df using Crunchbase data.
+        Priority:
+        1. If company name matches in cb_df, use funding_total_usd from cb_df.
+        2. Otherwise, fill with 'unknown'.
+
+        Parameters:
+        - df: Merged dataframe (YC + CB).
+        - cb_df: Cleaned Crunchbase dataframe with funding info.
+
         Returns:
-            DataFrame with handled missing values
+        - DataFrame with 'funding_total_usd' filled.
         """
-        df_filled = df.copy()
-        
-        # Handle numeric columns
-        numeric_cols = df_filled.select_dtypes(include=[np.number]).columns
-        for col in numeric_cols:
-            if df_filled[col].isnull().any():
-                if numeric_strategy == 'mean':
-                    df_filled[col].fillna(df_filled[col].mean(), inplace=True)
-                elif numeric_strategy == 'median':
-                    df_filled[col].fillna(df_filled[col].median(), inplace=True)
-                print(f"Filled {col} with {numeric_strategy}")
-        
-        # Handle categorical columns
-        categorical_cols = df_filled.select_dtypes(include=['object']).columns
-        for col in categorical_cols:
-            if col != self.target_column and df_filled[col].isnull().any():
-                if categorical_strategy == 'mode':
-                    mode_value = df_filled[col].mode()[0] if len(df_filled[col].mode()) > 0 else 'unknown'
-                    df_filled[col].fillna(mode_value, inplace=True)
-                elif categorical_strategy == 'unknown':
-                    df_filled[col].fillna('unknown', inplace=True)
-                print(f"Filled {col} with {categorical_strategy}")
-        
-        return df_filled
+        print("Filling funding_total_usd using Crunchbase where possible...")
+        df['funding_total_usd'] = df.apply(
+            lambda row: cb_df.loc[cb_df['name'] == row['name'], 'funding_total_usd'].values[0]
+            if pd.isna(row['funding_total_usd']) and row['name'] in cb_df['name'].values
+            else row['funding_total_usd'],
+            axis=1
+        )
+        # Replace any remaining NaNs with np.nan
+        df['funding_total_usd'] = df['funding_total_usd'].fillna(np.nan)
+        print("Filled funding_total_usd with unknown")
+        return df
+
     
     def merge_rare_categories(self, 
                              df: pd.DataFrame,
@@ -123,26 +205,40 @@ class DataPreprocessor:
         
         return df_merged
     
-    def encode_target(self, df: pd.DataFrame, 
-                     success_labels: List[str] = ['Acquired', 'Public'],
-                     failure_labels: List[str] = ['Inactive', 'Closed']) -> pd.DataFrame:
+    def encode_target(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Encode target variable.
-        Success (Acquired/Public) = 1, Failure (Inactive/Closed) = 0
+        Supports a set of status labels mapped to binary outcomes.
+        Unknown labels mapped to -1 and removed.
         
         Args:
-            df: Input DataFrame
-            success_labels: List of labels indicating success
-            failure_labels: List of labels indicating failure
-            
+            df: Input DataFrame   
         Returns:
             DataFrame with encoded target
         """
         df_encoded = df.copy()
+
+        print(df[self.target_column].value_counts())
+        
+        label_map = {
+            # YC statuses
+            'active': 1,
+            'inactive': 0,
+            'acquired': 1,
+            'public': 1,
+
+            # Crunchbase statuses
+            'operating': 1,
+            'closed': 0,
+            'acquired': 1,
+            'ipo': 1
+        }
+        
+        df_encoded[self.target_column] = df_encoded[self.target_column].astype(str).str.lower()
         
         if self.target_column in df_encoded.columns:
             df_encoded['target'] = df_encoded[self.target_column].apply(
-                lambda x: 1 if x in success_labels else (0 if x in failure_labels else -1)
+                lambda x: label_map.get(x, -1)
             )
             
             # Remove rows with unknown labels (-1)
@@ -183,29 +279,57 @@ class DataPreprocessor:
         
         return df_encoded
     
-    def get_feature_importance_ready_data(self, df: pd.DataFrame) -> tuple:
-        """
-        Prepare data for model training by separating features and target.
-        
-        Args:
-            df: Input DataFrame
-            
-        Returns:
-            Tuple of (X, y) where X is features and y is target
-        """
-        if 'target' not in df.columns:
-            raise ValueError("Target column not found. Please encode target first.")
-        
-        # Separate features and target
-        X = df.drop(['target', self.target_column], axis=1, errors='ignore')
-        y = df['target']
-        
-        # Store feature names
-        self.feature_names = list(X.columns)
-        
-        print(f"Features shape: {X.shape}")
-        print(f"Target shape: {y.shape}")
-        print(f"Number of features: {len(self.feature_names)}")
-        
-        return X, y
 
+    def merge_yc_cb(self, cleaned_yc: pd.DataFrame, cleaned_cb: pd.DataFrame) -> pd.DataFrame:
+        # Rename for consistency
+        cleaned_cb_renamed = cleaned_cb.rename(columns={
+            "category_list": "industry",
+            "location_combined": "region",
+            "funding_total_usd": "FoundingTotalUSD"
+        })
+        cleaned_yc_renamed = cleaned_yc.rename(columns={
+            "location_combined": "region"
+        })
+
+        # Merge on 'name'
+        merged_df = pd.merge(
+            cleaned_yc_renamed,
+            cleaned_cb_renamed[["name", "industry", "FoundingTotalUSD", "status", "company_age", "region"]],
+            on="name",
+            how="outer",
+            suffixes=("_yc", "_cb")
+        )
+
+        merged_df["funding_total_usd"] = (
+            merged_df["FoundingTotalUSD"]
+                .astype(str)
+                .str.strip()
+                .replace(
+                    to_replace=[
+                        r'^\s*[-–—−]+\s*$',   # All dash types
+                        r'^\s*$',            # Empty strings
+                        r'None',             # Literal "None"
+                        r'N/A',              # Literal "N/A"
+                    ],
+                    value=np.nan,
+                    regex=True
+                )
+                .str.replace(r'[\$,]', '', regex=True)  # Remove $ and commas only
+        )
+        merged_df["funding_total_usd"] = pd.to_numeric(merged_df["funding_total_usd"], errors="coerce")
+
+        # Add indicator column for funding availability
+        merged_df["has_funding_data"] = merged_df["funding_total_usd"].notna().astype(int)
+
+        merged_df["industry"] = merged_df["industry_yc"].combine_first(merged_df["industry_cb"])
+        merged_df["status"] = merged_df["status_cb"].combine_first(merged_df["status_yc"])
+        merged_df["company_age"] = merged_df["company_age_yc"].combine_first(merged_df["company_age_cb"])
+        merged_df["region"] = merged_df["region_yc"].combine_first(merged_df["region_cb"])
+        # Convert funding_total_usd to numeric
+        merged_df["funding_total_usd"] = pd.to_numeric(merged_df["funding_total_usd"], errors="coerce")
+
+        # Final selection
+        final_df = merged_df[[
+            "name", "industry", "funding_total_usd", "status", "company_age", "region"
+        ]]
+        return final_df
