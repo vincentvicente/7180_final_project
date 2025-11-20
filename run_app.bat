@@ -13,6 +13,6 @@ echo.
 echo Press Ctrl+C to stop the server.
 echo ========================================
 echo.
-streamlit run app/app.py --server.headless true
+venv\Scripts\streamlit.exe run app/app.py
 pause
 
