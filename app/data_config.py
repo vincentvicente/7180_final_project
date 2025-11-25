@@ -7,9 +7,6 @@ import numpy as np
 import re
 import os
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
 
 USE_REAL_DATA = True
 USE_PREPROCESSED = True  # Use preprocessed data to speed up loading
@@ -31,9 +28,6 @@ COLUMN_MAPPING = {
 STATUS_SUCCESS = ['Active', 'Acquired', 'Public']
 STATUS_FAILURE = ['Inactive', 'Closed', 'Dead']
 
-# ============================================================================
-# FUNCTIONS
-# ============================================================================
 
 def load_data():
     """Load data based on configuration"""

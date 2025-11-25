@@ -9,7 +9,6 @@ import numpy as np
 import sys
 import os
 
-# Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.train_model import ModelTrainer
@@ -17,12 +16,9 @@ from src.models.evaluate_model import ModelEvaluator
 from src.visualization.plots import PlotGenerator
 import joblib
 
-# Import data loader from the same directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 from data_config import load_data
-
-# Page configuration
 st.set_page_config(
     page_title="Startup Success Prediction",
     page_icon="🚀",
@@ -30,181 +26,281 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS styles
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
     /* Global styles */
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
     .main {
-        background-color: #f8f9fa;
-    }
-    h1, h2, h3 {
-        font-family: 'Helvetica Neue', sans-serif;
-        color: #2c3e50;
-    }
-    .stApp {
-        font-family: 'Helvetica Neue', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 0 !important;
     }
     
-    /* Sidebar optimization */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 1400px !important;
+    }
+    
+    /* Hide sidebar */
     section[data-testid="stSidebar"] {
-        background-color: #2c3e50;
-        color: white;
-    }
-    section[data-testid="stSidebar"] .stMarkdown {
-        color: white;
+        display: none;
     }
     
-    /* Header styles */
-    .main-header {
-        font-size: 3.5rem;
+    /* Top Navigation Bar */
+    .top-nav {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 1rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .nav-title {
+        font-size: 1.5rem;
         font-weight: 800;
-        color: #1E88E5;
-        text-align: center;
-        margin-bottom: 1rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        padding: 2rem 0;
-        background: linear-gradient(to right, #f8f9fa, #e3f2fd, #f8f9fa);
-        border-radius: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-    .sub-header {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #455a64;
-        margin-top: 2rem;
+    
+    /* Card styles - Modern glassmorphism */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
         margin-bottom: 1.5rem;
-        border-left: 6px solid #1E88E5;
-        padding-left: 15px;
-        background-color: #ffffff;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        border-radius: 0 10px 10px 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #2d3748;
     }
     
-    /* Card styles */
-    .card {
-        background-color: #ffffff;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        margin-bottom: 25px;
-        transition: transform 0.2s;
-    }
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+    .glass-card h1, .glass-card h2, .glass-card h3, .glass-card h4 {
+        color: #1a202c !important;
     }
     
-    /* Metric styles */
-    .metric-container {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 20px;
-        text-align: center;
-        border: 1px solid #eceff1;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #1E88E5;
-    }
-    .metric-label {
+    .glass-card p, .glass-card li {
+        color: #4a5568 !important;
         font-size: 1rem;
-        color: #78909c;
+        line-height: 1.7;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Metric cards - Colorful and modern */
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 1.5rem;
+        color: white;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: scale(1.05);
+    }
+    
+    .metric-card.green {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        box-shadow: 0 8px 24px rgba(56, 239, 125, 0.4);
+    }
+    
+    .metric-card.orange {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        box-shadow: 0 8px 24px rgba(245, 87, 108, 0.4);
+    }
+    
+    .metric-card.blue {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        box-shadow: 0 8px 24px rgba(79, 172, 254, 0.4);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        opacity: 0.9;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
     
-    /* Success/Failure tags */
-    .status-success {
-        color: #43a047;
-        font-weight: bold;
-    }
-    .status-failure {
-        color: #e53935;
-        font-weight: bold;
+    /* Section headers */
+    .section-header {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a202c !important;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
     
-    /* Adjust Streamlit default padding */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 4rem;
+    /* All text elements in main content */
+    .main * {
+        color: #2d3748;
     }
+    
+    /* Streamlit default text */
+    .stMarkdown {
+        color: #2d3748;
+    }
+    
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #1a202c !important;
+    }
+    
+    .stMarkdown p, .stMarkdown li {
+        color: #4a5568 !important;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        padding: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        background-color: transparent;
+        border: none;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+    }
+    
+    /* Progress bars */
+    .stProgress > div > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Info boxes */
+    .stAlert {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# Title Area
-st.markdown('<div class="main-header">🚀 Startup Success Prediction</div>', unsafe_allow_html=True)
 st.markdown("""
-<div style='text-align: center; margin-bottom: 30px; font-size: 1.2rem; color: #546e7a;'>
-    Leveraging Machine Learning to Predict Startup Outcomes based on Y Combinator & Crunchbase Data
+<div class="top-nav">
+    <div class="nav-title">🚀 Startup Success Prediction</div>
+    <div style='font-size: 0.9rem; color: #718096;'>ML-Powered Analysis Dashboard</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Sidebar Navigation
-st.sidebar.title("🧭 Navigation")
-page = st.sidebar.radio(
-    "Go to",
-    ["Home", "Data Explorer", "Model Performance", "Interactive Prediction", "Regional Analysis"]
+page = st.radio(
+    "",
+    ["🏠 Home", "🔍 Data Explorer", "📊 Model Performance", "🎯 Interactive Prediction", "🌍 Regional Analysis"],
+    horizontal=True,
+    label_visibility="collapsed"
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div style='font-size: 0.9rem; color: #b0bec5;'>
-    <strong>About:</strong><br>
-    This tool helps investors and founders understand the factors contributing to startup success.
-</div>
-""", unsafe_allow_html=True)
+page = page.split(" ", 1)[1] if " " in page else page
 
-# Initialize Plot Generator
 plot_gen = PlotGenerator()
 
-# Load Data
 @st.cache_data
 def get_data():
     return load_data()
 
 df = get_data()
-
-# ==============================================================================
-# HOME PAGE
-# ==============================================================================
 if page == "Home":
+    
+    # Welcome message
+    st.markdown('<div class="section-header">👋 Welcome to Startup Analytics</div>', unsafe_allow_html=True)
     
     # Project Overview and Key Features
     col1, col2 = st.columns([1, 1], gap="large")
     
     with col1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="sub-header">📊 Project Overview</div>', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-header" style="font-size: 1.4rem;">📊 Project Overview</div>', unsafe_allow_html=True)
         st.markdown("""
+        <div style="color: #4a5568; font-size: 1rem; line-height: 1.8;">
         This project predicts whether a startup will:
-        *   <span class="status-success">Remain Active</span> (including acquired and IPO)
-        *   <span class="status-failure">Close/Become Inactive</span>
+        <ul style="margin-top: 0.5rem;">
+            <li><span class="status-success">Remain Active</span> (including acquired and IPO)</li>
+            <li><span class="status-failure">Close/Become Inactive</span></li>
+        </ul>
         
-        **Data Sources:**
-        *   Y Combinator Companies Dataset (2005-2024)
-        *   Crunchbase Startup Dataset
+        <strong style="color: #2d3748; display: block; margin-top: 1rem;">Data Sources:</strong>
+        <ul>
+            <li>Y Combinator Companies Dataset (2005-2024)</li>
+            <li>Crunchbase Startup Dataset</li>
+        </ul>
+        </div>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="sub-header">🎯 Key Features</div>', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-header" style="font-size: 1.4rem;">🎯 Key Features</div>', unsafe_allow_html=True)
         st.markdown("""
+        <div style="color: #4a5568; font-size: 1rem; line-height: 1.8;">
         Our model analyzes success based on:
-        *   🗓️ **Company Age** (Founding Year)
-        *   💰 **Funding** (Total Amount & Rounds)
-        *   🏢 **Industry & Region**
-        *   👥 **Team Size**
-        *   📝 **Text Analysis** (Descriptions & Tags)
-        """)
+        <ul style="margin-top: 0.5rem;">
+            <li>🗓️ <strong style="color: #2d3748;">Company Age</strong> (Founding Year)</li>
+            <li>💰 <strong style="color: #2d3748;">Funding</strong> (Total Amount & Rounds)</li>
+            <li>🏢 <strong style="color: #2d3748;">Industry & Region</strong></li>
+            <li>👥 <strong style="color: #2d3748;">Team Size</strong></li>
+            <li>📝 <strong style="color: #2d3748;">Text Analysis</strong> (Descriptions & Tags)</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Instructor Feedback Section
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">🔍 Addressing Instructor Feedback</div>', unsafe_allow_html=True)
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">🔍 Addressing Instructor Feedback</div>', unsafe_allow_html=True)
     
     f_col1, f_col2, f_col3, f_col4 = st.columns(4)
     with f_col1:
@@ -217,15 +313,15 @@ if page == "Home":
         st.info("**4. Text Processing**\nTF-IDF, Topic Modeling, and Embeddings.")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Dataset Statistics
-    st.markdown('<div class="sub-header">📈 Dataset Statistics</div>', unsafe_allow_html=True)
+    # Dataset Statistics with colorful cards
+    st.markdown('<div class="section-header">📈 Key Metrics</div>', unsafe_allow_html=True)
     
-    # Metric cards using custom CSS
+    # Metric cards using modern gradient design
     stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
     
     with stat_col1:
         st.markdown(f"""
-        <div class="metric-container">
+        <div class="metric-card">
             <div class="metric-value">{len(df):,}</div>
             <div class="metric-label">Total Companies</div>
         </div>
@@ -234,7 +330,7 @@ if page == "Home":
     with stat_col2:
         success_rate = (df['target'].sum() / len(df)) * 100
         st.markdown(f"""
-        <div class="metric-container">
+        <div class="metric-card green">
             <div class="metric-value">{success_rate:.1f}%</div>
             <div class="metric-label">Success Rate</div>
         </div>
@@ -242,7 +338,7 @@ if page == "Home":
         
     with stat_col3:
         st.markdown(f"""
-        <div class="metric-container">
+        <div class="metric-card orange">
             <div class="metric-value">{df['company_age'].mean():.1f}</div>
             <div class="metric-label">Avg Age (Years)</div>
         </div>
@@ -250,7 +346,7 @@ if page == "Home":
         
     with stat_col4:
         st.markdown(f"""
-        <div class="metric-container">
+        <div class="metric-card blue">
             <div class="metric-value">${df['total_funding'].mean()/1e6:.1f}M</div>
             <div class="metric-label">Avg Funding</div>
         </div>
@@ -259,18 +355,15 @@ if page == "Home":
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Class Distribution Plot
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown("### 📊 Class Distribution")
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📊 Class Distribution</div>', unsafe_allow_html=True)
     fig = plot_gen.plot_class_distribution(df['target'], labels=['Failure', 'Success'])
     st.pyplot(fig)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ==============================================================================
-# DATA EXPLORER PAGE
-# ==============================================================================
 elif page == "Data Explorer":
-    st.markdown('<div class="sub-header">🔍 Data Explorer</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">🔍 Data Explorer</div>', unsafe_allow_html=True)
     
     # Optimized filter layout using Expander
     with st.expander("🔽 Filter Data (Click to expand)", expanded=True):
@@ -312,7 +405,7 @@ elif page == "Data Explorer":
     ])
     
     with tab1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("### Company Age Distribution")
         if len(filtered_df) > 0:
             fig = plot_gen.plot_company_age_distribution(filtered_df)
@@ -322,7 +415,7 @@ elif page == "Data Explorer":
         st.markdown('</div>', unsafe_allow_html=True)
     
     with tab2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("### Funding Analysis")
         if len(filtered_df) > 0:
             fig = plot_gen.plot_funding_analysis(filtered_df)
@@ -332,7 +425,7 @@ elif page == "Data Explorer":
         st.markdown('</div>', unsafe_allow_html=True)
     
     with tab3:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("### Success Rate by Industry (Top 15)")
         if len(filtered_df) > 0:
             fig = plot_gen.plot_success_rate_by_category(filtered_df, 'industry', top_n=15)
@@ -342,7 +435,7 @@ elif page == "Data Explorer":
         st.markdown('</div>', unsafe_allow_html=True)
     
     with tab4:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("### Success Rate by Region (Top 15)")
         if len(filtered_df) > 0:
             fig = plot_gen.plot_success_rate_by_category(filtered_df, 'region', top_n=15)
@@ -356,21 +449,18 @@ elif page == "Data Explorer":
         st.dataframe(filtered_df, use_container_width=True)
 
 
-# ==============================================================================
-# MODEL PERFORMANCE PAGE
-# ==============================================================================
 elif page == "Model Performance":
-    st.markdown('<div class="sub-header">📊 Model Performance</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📊 Model Performance</div>', unsafe_allow_html=True)
     
     st.markdown("""
-    <div class="card">
-        <h3>Evaluation Metrics Strategy</h3>
-        <p>Given the <strong>imbalanced dataset</strong> (83% success rate), we prioritize metrics beyond Accuracy:</p>
-        <ul>
-            <li><strong>Precision & Recall:</strong> To balance false positives and false negatives.</li>
-            <li><strong>F1-Score:</strong> Harmonic mean of precision and recall.</li>
-            <li><strong>ROC-AUC:</strong> Ability to distinguish between classes.</li>
-            <li><strong>Confusion Matrix:</strong> Primary metric for visual evaluation.</li>
+    <div class="glass-card" style="color: #2d3748;">
+        <h3 style="color: #1a202c; margin-bottom: 1rem;">Evaluation Metrics Strategy</h3>
+        <p style="color: #4a5568; font-size: 1rem; line-height: 1.6;">Given the <strong>imbalanced dataset</strong> (83% success rate), we prioritize metrics beyond Accuracy:</p>
+        <ul style="color: #4a5568; font-size: 1rem; line-height: 1.8;">
+            <li><strong style="color: #2d3748;">Precision & Recall:</strong> To balance false positives and false negatives.</li>
+            <li><strong style="color: #2d3748;">F1-Score:</strong> Harmonic mean of precision and recall.</li>
+            <li><strong style="color: #2d3748;">ROC-AUC:</strong> Ability to distinguish between classes.</li>
+            <li><strong style="color: #2d3748;">Confusion Matrix:</strong> Primary metric for visual evaluation.</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -396,7 +486,7 @@ elif page == "Model Performance":
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Confusion Matrix Section
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("### 🎯 Confusion Matrix (Primary Evaluation)")
     st.caption("Visualizing model performance on test data.")
     
@@ -426,7 +516,7 @@ elif page == "Model Performance":
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Feature Importance
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("### 🔑 Feature Importance")
     
     # Simulated feature importance
@@ -442,16 +532,15 @@ elif page == "Model Performance":
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ==============================================================================
-# INTERACTIVE PREDICTION PAGE
-# ==============================================================================
 elif page == "Interactive Prediction":
-    st.markdown('<div class="sub-header">🔮 Interactive Prediction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">🔮 Interactive Prediction</div>', unsafe_allow_html=True)
     
     st.markdown("""
-    <div class="card" style="background-color: #e3f2fd; border-left: 5px solid #2196f3;">
-        <strong>Try it yourself!</strong> Enter startup details below to predict its likelihood of success.
-        The model analyzes key factors like funding, location, and team size.
+    <div class="glass-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 5px solid #2196f3;">
+        <p style="color: #1565c0; font-size: 1.1rem; font-weight: 600; margin: 0;">
+            <strong>Try it yourself!</strong> Enter startup details below to predict its likelihood of success.
+            The model analyzes key factors like funding, location, and team size.
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -520,11 +609,8 @@ elif page == "Interactive Prediction":
         *   **Industry:** {industry}
         """)
 
-# ==============================================================================
-# REGIONAL ANALYSIS PAGE
-# ==============================================================================
 elif page == "Regional Analysis":
-    st.markdown('<div class="sub-header">🌍 Regional Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">🌍 Regional Analysis</div>', unsafe_allow_html=True)
     
     # Region Selector
     col1, col2 = st.columns([1, 3])
@@ -558,7 +644,7 @@ elif page == "Regional Analysis":
     col_left, col_right = st.columns(2)
     
     with col_left:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("### 🗺️ Success Rate by Region")
         # Always show global comparison
         fig = plot_gen.plot_success_rate_by_category(df, 'region', title='Regional Comparison (Top 15)', top_n=15)
@@ -566,7 +652,7 @@ elif page == "Regional Analysis":
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col_right:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown(f"### 🏭 Industries in {selected_region}")
         fig = plot_gen.plot_success_rate_by_category(region_df, 'industry', title=f'Industry Success in {selected_region}', top_n=15)
         st.pyplot(fig)

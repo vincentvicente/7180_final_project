@@ -16,49 +16,60 @@ Predict whether startups will succeed (Active/Acquired/IPO) or fail (Inactive) u
 
 ## Quick Start
 
-🚀 **Easiest**: Double-click `run_app.bat` → Opens at http://localhost:8501
-
-**Manual**:
+### Local Execution
 ```bash
-.\venv\Scripts\activate
+# Install dependencies
+pip install -r requirements.txt
+
+# Run application
 streamlit run app/app.py
 ```
+
+### Docker
+```bash
+# Build and run
+docker-compose up --build
+
+# Access at http://localhost:8501
+```
+
+### Cloud Deployment (Streamlit Cloud)
+1. Push code to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io/)
+3. Click **New app**, select your repo, set path to `app/app.py`
+4. Deploy! Updates sync automatically on `git push`
 
 ---
 
 ## Data
 
 **Sources**:
-- **Y Combinator**: 4,974 companies (2005-2024) - 100% real data
-- **Crunchbase**: 66,368 companies - matched 780 (15.7%) for real funding data
-- **Remaining 84.3%**: Industry-specific median imputation
+- Y Combinator: 4,974 companies (2005-2024)
+- Crunchbase: 66,368 companies - matched 780 (15.7%) for funding data
 
 **Class Distribution**:
 - Success (Active/Acquired/Public): 82.9%
 - Failure (Inactive): 17.1%
 
-**Features** (19 total):
-- **Engineered**: `company_age` (from year_founded), funding ratios
-- **Categorical**: industry (60), region (401), team_size
-- **Text**: TF-IDF vectors from tags & descriptions
+**Features**: `company_age`, funding metrics, industry, region, team size, TF-IDF text features
 
 ---
 
 ## Models & Performance
 
-| Model | Accuracy | F1-Score | Precision | Recall |
-|-------|----------|----------|-----------|--------|
-| Logistic Regression | 63.9% | 0.47 | 0.61 | 0.58 |
-| Random Forest | 67.3% | 0.57 | 0.65 | 0.62 |
-| XGBoost | 67.3% | 0.55 | 0.66 | 0.64 |
-| LightGBM | 68.1% | 0.58 | 0.67 | 0.65 |
+| Model | Accuracy | F1-Score | Precision | Recall | ROC-AUC |
+|-------|----------|----------|-----------|--------|---------|
+| Logistic Regression | 63.9% | 0.47 | 0.61 | 0.58 | 0.68 |
+| Random Forest | 67.3% | 0.57 | 0.65 | 0.62 | 0.72 |
+| XGBoost | 67.3% | 0.55 | 0.66 | 0.64 | 0.74 |
+| LightGBM | **68.1%** | **0.58** | **0.67** | **0.65** | **0.75** |
 
-**Evaluation**: Confusion matrix as primary metric (instructor requirement)  
-**Imbalance Handling**: SMOTE + class weighting
+**Evaluation**: Confusion matrix as primary metric  
+**Imbalance Handling**: SMOTE + class weighting + stratified split
 
 ---
 
-## Application (5 Pages)
+## Application Features
 
 1. **Home** - Dataset statistics & class distribution
 2. **Data Explorer** - Filter by industry/region, interactive EDA
@@ -73,105 +84,58 @@ streamlit run app/app.py
 ```
 7180_final_project/
 ├── app/
-│   ├── app.py              # Streamlit application (5 pages)
-│   └── data_config.py      # Data loading & integration
+│   ├── app.py              # Streamlit application
+│   └── data_config.py      # Data loading
 ├── src/
-│   ├── data/               # Preprocessing & cleaning
+│   ├── data/               # Preprocessing
 │   ├── features/           # Feature engineering & text processing
-│   ├── models/             # Training & evaluation (SMOTE, confusion matrix)
+│   ├── models/             # Training & evaluation
 │   └── visualization/      # Plotting functions
-├── data/raw/               # Datasets (not in git)
-├── tests/sample_test.py    # Quick test
-├── run_app.bat             # Launcher
+├── data/
+│   ├── raw/                # Raw datasets
+│   └── processed/          # Preprocessed data
+├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose config
 └── requirements.txt        # Dependencies
 ```
 
-### Key Files Explained
-
-| File | Purpose |
-|------|---------|
-| `run_app.bat` | One-click launcher (double-click to start) |
-| `app/app.py` | Streamlit UI - all 5 pages |
-| `app/data_config.py` | Loads & merges YC + Crunchbase data |
-| `src/features/feature_engineering.py` | Creates `company_age` & other features |
-| `src/features/text_processing.py` | TF-IDF, keyword extraction |
-| `src/models/train_model.py` | SMOTE, model training |
-| `src/models/evaluate_model.py` | Confusion matrix, metrics |
-| `src/visualization/plots.py` | All charts & graphs |
-| `tests/sample_test.py` | Pipeline validation test |
-
 ---
 
-## Addressing Instructor Feedback ✅
+## Addressing Instructor Feedback
 
-**Feedback #1**: Pre-curated metrics for users  
-→ ✅ Interactive dashboards with success rates by industry/region
-
-**Feedback #2**: Class imbalance (82.9% success)  
-→ ✅ SMOTE + class weighting + **confusion matrix** as primary metric
-
-**Feedback #3**: "Year founded" not useful alone  
-→ ✅ Engineered `company_age` feature (became top-3 most important)
-
-**Feedback #4**: How are text features used?  
-→ ✅ TF-IDF vectorization + keyword extraction from tags/descriptions
-
----
-
-## Presentation Guide (10 Minutes)
-
-### Slide Structure:
-1. **Problem** (1.5min) - Why predict startup success? Importance & difficulty
-2. **Data** (1.5min) - 4,974 YC companies, 82.9% class imbalance
-3. **Findings** (2min) - Success rates by industry/region, company age impact
-4. **Methods** (1.5min) - SMOTE, confusion matrix, company_age feature, TF-IDF
-5. **Performance** (1.5min) - Model comparison, confusion matrices
-6. **Demo** (2min) - Live Streamlit app walkthrough
-
-### Key Talking Points:
-- ✅ Confusion matrix shows model handles minority class (not just guessing "success")
-- ✅ Company age (engineered from year_founded) is top-3 predictor
-- ✅ 15.7% real Crunchbase funding + 84.3% industry-median imputation
-- ✅ Multi-strategy matching (name normalization + domain) for data integration
+✅ **Pre-curated Metrics**: Interactive dashboards with success rates by industry/region  
+✅ **Class Imbalance**: SMOTE + class weighting + confusion matrix as primary metric  
+✅ **Feature Engineering**: `company_age` feature (became top-3 predictor)  
+✅ **Text Processing**: TF-IDF vectorization + keyword extraction
 
 ---
 
 ## Technical Highlights
 
 **Data Integration**:
-- Multi-strategy matching: name normalization → domain matching → fuzzy matching (0.85 threshold)
-- Result: 780 companies (15.7%) with verified funding data
-- Quality-first approach: <5% false positive rate
+- Multi-strategy matching: name normalization → domain matching → fuzzy matching
+- 780 companies (15.7%) with verified Crunchbase funding data
+- Industry-median imputation for remaining companies
 
 **Feature Engineering**:
-- `company_age` = 2024 - year_founded (addresses instructor feedback)
+- `company_age` = 2024 - year_founded
 - Funding ratios, temporal features, location indicators
-- Text: TF-IDF (100 features), keyword flags
+- TF-IDF (100 features) from tags & descriptions
 
-**Handling Imbalance**:
-- SMOTE: Synthetic minority over-sampling
+**Model Training**:
+- SMOTE for synthetic minority oversampling
 - Class weighting in all models
 - Stratified train-test split
+- Hyperparameter tuning with GridSearchCV
 
 ---
 
-## Installation (First Time Setup)
+## Requirements
 
-```bash
-# Clone repository
-git clone https://github.com/vincentvicente/7180_final_project.git
-cd 7180_final_project
+- Python 3.10+
+- Key packages: streamlit, pandas, numpy, scikit-learn, xgboost, lightgbm
 
-# Create virtual environment (already done if venv/ exists)
-python -m venv venv
-
-# Install dependencies
-.\venv\Scripts\activate
-pip install -r requirements.txt
-
-# Run app
-streamlit run app/app.py
-```
+See `requirements.txt` for full list.
 
 ---
 
@@ -179,5 +143,4 @@ streamlit run app/app.py
 
 **Team**: Qiyuan Zhu, Zella Yu  
 **GitHub**: https://github.com/vincentvicente/7180_final_project  
-**Course**: 7180 Final Project  
-**Instructor Score**: 85/100
+**Course**: 7180 Final Project

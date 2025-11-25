@@ -245,21 +245,35 @@ class PlotGenerator:
         plt.xticks([1, 2], ['Failure', 'Success'])
         
         # Funding bins
-        # Fix for qcut error: handle duplicate edges by dropping them
-        # and adjust labels dynamically
+        # Use a robust approach that handles duplicate values gracefully
+        # Instead of qcut which fails with many duplicates, use pd.cut with explicit bins
+        # or handle the unique values in the data
         try:
-            funding_bins = pd.qcut(df[funding_col], q=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'],
-                                  duplicates='drop')
-        except ValueError:
-             # Fallback if bin edges are not unique enough for 5 bins
-             # This can happen if many values are 0 or identical
-             funding_bins = pd.cut(df[funding_col], bins=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'])
+            # Try qcut first, but catch ALL possible errors
+            funding_bins = pd.qcut(df[funding_col], q=5, duplicates='drop')
+            # If successful and we got exactly 5 bins, rename them nicely
+            if hasattr(funding_bins, 'cat') and len(funding_bins.cat.categories) == 5:
+                funding_bins = funding_bins.cat.rename_categories(['Very Low', 'Low', 'Medium', 'High', 'Very High'])
+        except Exception:
+            # If qcut fails for ANY reason, use a simpler approach
+            # Use percentile-based manual binning which is more robust
+            unique_vals = df[funding_col].nunique()
+            if unique_vals > 5:
+                # If enough unique values, use regular cut
+                funding_bins = pd.cut(df[funding_col], bins=5)
+            else:
+                # If very few unique values, just use value-based categories
+                funding_bins = pd.cut(df[funding_col], bins=min(3, unique_vals))
 
         success_by_funding = df.groupby(funding_bins, observed=True)[target_col].mean() * 100
+        
+        # Convert index to strings for display
+        bin_labels = [str(x) for x in success_by_funding.index]
+        
         axes[1, 0].bar(range(len(success_by_funding)), success_by_funding.values,
                       color=self.color_palette[2], alpha=0.8)
         axes[1, 0].set_xticks(range(len(success_by_funding)))
-        axes[1, 0].set_xticklabels(success_by_funding.index, rotation=45, ha='right')
+        axes[1, 0].set_xticklabels(bin_labels, rotation=45, ha='right')
         axes[1, 0].set_xlabel('Funding Level', fontsize=11)
         axes[1, 0].set_ylabel('Success Rate (%)', fontsize=11)
         axes[1, 0].set_title('Success Rate by Funding Level', fontsize=12, fontweight='bold')
