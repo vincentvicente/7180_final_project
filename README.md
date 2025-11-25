@@ -2,7 +2,8 @@
 
 **Team**: Qiyuan Zhu, Zella Yu  
 **Course**: 7180 Final Project  
-**GitHub**: https://github.com/vincentvicente/7180_final_project
+**GitHub**: https://github.com/vincentvicente/7180_final_project  
+**Live Demo**: https://ycstartup-success-predictor.streamlit.app/
 
 ---
 
@@ -16,7 +17,10 @@ Predict whether startups will succeed (Active/Acquired/IPO) or fail (Inactive) u
 
 ## Quick Start
 
-### Local Execution
+### 🌐 Live Demo
+**Access the deployed application**: https://ycstartup-success-predictor.streamlit.app/
+
+### 💻 Local Execution
 ```bash
 # Install dependencies
 pip install -r requirements.txt
@@ -24,20 +28,6 @@ pip install -r requirements.txt
 # Run application
 streamlit run app/app.py
 ```
-
-### Docker
-```bash
-# Build and run
-docker-compose up --build
-
-# Access at http://localhost:8501
-```
-
-### Cloud Deployment (Streamlit Cloud)
-1. Push code to GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io/)
-3. Click **New app**, select your repo, set path to `app/app.py`
-4. Deploy! Updates sync automatically on `git push`
 
 ---
 
@@ -94,8 +84,6 @@ docker-compose up --build
 ├── data/
 │   ├── raw/                # Raw datasets
 │   └── processed/          # Preprocessed data
-├── Dockerfile              # Docker configuration
-├── docker-compose.yml      # Docker Compose config
 └── requirements.txt        # Dependencies
 ```
 
