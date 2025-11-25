@@ -245,9 +245,17 @@ class PlotGenerator:
         plt.xticks([1, 2], ['Failure', 'Success'])
         
         # Funding bins
-        funding_bins = pd.qcut(df[funding_col], q=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'],
-                              duplicates='drop')
-        success_by_funding = df.groupby(funding_bins)[target_col].mean() * 100
+        # Fix for qcut error: handle duplicate edges by dropping them
+        # and adjust labels dynamically
+        try:
+            funding_bins = pd.qcut(df[funding_col], q=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'],
+                                  duplicates='drop')
+        except ValueError:
+             # Fallback if bin edges are not unique enough for 5 bins
+             # This can happen if many values are 0 or identical
+             funding_bins = pd.cut(df[funding_col], bins=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'])
+
+        success_by_funding = df.groupby(funding_bins, observed=True)[target_col].mean() * 100
         axes[1, 0].bar(range(len(success_by_funding)), success_by_funding.values,
                       color=self.color_palette[2], alpha=0.8)
         axes[1, 0].set_xticks(range(len(success_by_funding)))

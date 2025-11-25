@@ -5,14 +5,17 @@ Data loading configuration - SIMPLIFIED FOR FAST LOADING
 import pandas as pd
 import numpy as np
 import re
+import os
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
 
 USE_REAL_DATA = True
+USE_PREPROCESSED = True  # Use preprocessed data to speed up loading
 YC_DATA_FILE = "data/raw/yc_companies.csv"
 CRUNCHBASE_DATA_FILE = "data/raw/crunchbase_data.csv"
+PREPROCESSED_DATA_FILE = "data/processed/processed_data.pkl"
 
 COLUMN_MAPPING = {
     'company_name': 'name',
@@ -35,7 +38,11 @@ STATUS_FAILURE = ['Inactive', 'Closed', 'Dead']
 def load_data():
     """Load data based on configuration"""
     if USE_REAL_DATA:
-        return load_real_data_fast()
+        if USE_PREPROCESSED and os.path.exists(PREPROCESSED_DATA_FILE):
+            print(f"⚡ Using preprocessed data for fast loading...")
+            return pd.read_pickle(PREPROCESSED_DATA_FILE)
+        else:
+            return load_real_data_fast()
     else:
         return load_sample_data()
 
@@ -134,4 +141,3 @@ def load_sample_data():
     }
     
     return pd.DataFrame(data)
-
