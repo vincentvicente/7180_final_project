@@ -86,14 +86,20 @@ st.markdown("""
         color: #2d3748;
     }
     
-    .glass-card h1, .glass-card h2, .glass-card h3, .glass-card h4 {
+    .glass-card h1, .glass-card h2, .glass-card h3, .glass-card h4, .glass-card h5, .glass-card h6 {
         color: #1a202c !important;
     }
     
-    .glass-card p, .glass-card li {
-        color: #4a5568 !important;
-        font-size: 1rem;
-        line-height: 1.7;
+    .glass-card p, .glass-card li, .glass-card span, .glass-card div {
+        color: #2d3748 !important;
+    }
+    
+    .glass-card strong {
+        color: #1a202c !important;
+    }
+    
+    .glass-card ul, .glass-card ol {
+        color: #2d3748 !important;
     }
     
     .glass-card:hover {
@@ -155,22 +161,25 @@ st.markdown("""
         gap: 0.5rem;
     }
     
-    /* All text elements in main content */
-    .main * {
-        color: #2d3748;
+    /* Force all text to be visible */
+    .element-container, .stMarkdown, .stMarkdown * {
+        color: #2d3748 !important;
     }
     
-    /* Streamlit default text */
-    .stMarkdown {
-        color: #2d3748;
-    }
-    
+    .element-container h1, .element-container h2, .element-container h3,
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
         color: #1a202c !important;
+        font-weight: 700 !important;
     }
     
-    .stMarkdown p, .stMarkdown li {
-        color: #4a5568 !important;
+    .element-container p, .element-container li, .element-container div,
+    .stMarkdown p, .stMarkdown li, .stMarkdown div {
+        color: #2d3748 !important;
+    }
+    
+    .element-container strong, .stMarkdown strong {
+        color: #1a202c !important;
+        font-weight: 600 !important;
     }
     
     /* Buttons */
