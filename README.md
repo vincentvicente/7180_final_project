@@ -18,16 +18,72 @@ Predict whether startups will succeed (Active/Acquired/IPO) or fail (Inactive) u
 ## Quick Start
 
 ### 🌐 Live Demo
-**Access the deployed application**: https://ycstartup-success-predictor.streamlit.app/
+**Access the deployed application**: [https://ycstartup-success-predictor.streamlit.app/](https://ycstartup-success-predictor.streamlit.app/)
 
-### 💻 Local Execution
+### 💻 Local Setup
+
+#### Prerequisites
+- Python 3.10 or higher
+- pip package manager
+- Git (optional, for cloning)
+
+#### Installation Steps
+
+**1. Clone the repository** (or download ZIP)
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run application
-streamlit run app/app.py
+git clone https://github.com/vincentvicente/7180_final_project.git
+cd 7180_final_project
 ```
+
+**2. Create virtual environment** (recommended)
+```bash
+# macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+
+# Windows
+python -m venv venv
+venv\Scripts\activate
+```
+
+**3. Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+**4. Run preprocessing** (first time only, ~1 minute)
+```bash
+python preprocess_data.py
+```
+This generates optimized data files in `data/processed/` for faster app loading.
+
+**5. Launch the application**
+```bash
+# macOS/Linux
+streamlit run app/app.py
+
+# Or use the convenience script
+./run_app.sh          # macOS/Linux
+run_app.bat           # Windows
+```
+
+**6. Open in browser**
+- The app will automatically open at: `http://localhost:8501`
+- If not, manually navigate to the URL shown in terminal
+
+#### Troubleshooting
+
+**Issue**: `ModuleNotFoundError: No module named 'streamlit'`
+- **Solution**: Make sure virtual environment is activated and dependencies are installed
+
+**Issue**: App loads slowly on first run
+- **Solution**: Run `python preprocess_data.py` to generate preprocessed data files
+
+**Issue**: Port 8501 already in use
+- **Solution**: Kill existing Streamlit process or specify different port:
+  ```bash
+  streamlit run app/app.py --server.port 8502
+  ```
 
 ---
 
@@ -126,9 +182,3 @@ streamlit run app/app.py
 See `requirements.txt` for full list.
 
 ---
-
-## Contact
-
-**Team**: Qiyuan Zhu, Zella Yu  
-**GitHub**: https://github.com/vincentvicente/7180_final_project  
-**Course**: 7180 Final Project
