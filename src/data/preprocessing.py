@@ -124,11 +124,11 @@ class DataPreprocessor:
         return df_merged
     
     def encode_target(self, df: pd.DataFrame, 
-                     success_labels: List[str] = ['Acquired', 'Public'],
-                     failure_labels: List[str] = ['Inactive', 'Closed']) -> pd.DataFrame:
+                     success_labels: List[str] = ['Active', 'Acquired', 'Public'],
+                     failure_labels: List[str] = ['Inactive', 'Closed', 'Dead']) -> pd.DataFrame:
         """
         Encode target variable.
-        Success (Acquired/Public) = 1, Failure (Inactive/Closed) = 0
+        Success (Active/Acquired/Public) = 1, Failure (Inactive/Closed/Dead) = 0
         
         Args:
             df: Input DataFrame
