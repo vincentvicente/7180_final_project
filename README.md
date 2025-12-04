@@ -11,79 +11,59 @@
 
 Predict whether startups will succeed (Active/Acquired/IPO) or fail (Inactive) using machine learning on **4,974 Y Combinator companies** (2005-2024) integrated with Crunchbase funding data.
 
-**Key Achievement**: Addressed all instructor feedback - class imbalance handling, company age feature engineering, text processing, and confusion matrix evaluation.
-
 ---
 
 ## Quick Start
 
 ### 🌐 Live Demo
-**Access the deployed application**: [https://ycstartup-success-predictor.streamlit.app/](https://ycstartup-success-predictor.streamlit.app/)
+**Access the deployed application**: [https://ycstartup-success-predictor.streamlit.app/](https://ycstartup-success-predictor.streamlit.app/) (Recommended)
 
-### 💻 Local Setup
+### 🐳 Docker Deployment
 
-#### Prerequisites
-- Python 3.10 or higher
-- pip package manager
-- Git (optional, for cloning)
+**Prerequisites**:
+- Docker installed ([Get Docker](https://docs.docker.com/get-docker/))
+- Docker Compose (included with Docker Desktop)
 
-#### Installation Steps
-
-**1. Clone the repository** (or download ZIP)
+#### Option 1: Docker Compose (Recommended)
 ```bash
+# Clone the repository
 git clone https://github.com/vincentvicente/7180_final_project.git
 cd 7180_final_project
+
+# Build and start the application
+docker-compose up --build
+
+# Or run in background (detached mode)
+docker-compose up -d
+
+# Stop the application
+docker-compose down
 ```
 
-**2. Create virtual environment** (recommended)
+#### Option 2: Docker CLI
 ```bash
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
+# Build the image
+docker build -t yc-startup-predictor .
 
-# Windows
-python -m venv venv
-venv\Scripts\activate
+# Run the container
+docker run -p 8501:8501 --name startup-app yc-startup-predictor
+
+# Or run in background
+docker run -d -p 8501:8501 --name startup-app yc-startup-predictor
+
+# Stop and remove container
+docker stop startup-app
+docker rm startup-app
 ```
 
-**3. Install dependencies**
-```bash
-pip install -r requirements.txt
-```
+**Access the app**: Open your browser to `http://localhost:8501`
 
-**4. Run preprocessing** (first time only, ~1 minute)
-```bash
-python preprocess_data.py
-```
-This generates optimized data files in `data/processed/` for faster app loading.
-
-**5. Launch the application**
-```bash
-# macOS/Linux
-streamlit run app/app.py
-
-# Or use the convenience script
-./run_app.sh          # macOS/Linux
-run_app.bat           # Windows
-```
-
-**6. Open in browser**
-- The app will automatically open at: `http://localhost:8501`
-- If not, manually navigate to the URL shown in terminal
-
-#### Troubleshooting
-
-**Issue**: `ModuleNotFoundError: No module named 'streamlit'`
-- **Solution**: Make sure virtual environment is activated and dependencies are installed
-
-**Issue**: App loads slowly on first run
-- **Solution**: Run `python preprocess_data.py` to generate preprocessed data files
-
-**Issue**: Port 8501 already in use
-- **Solution**: Kill existing Streamlit process or specify different port:
-  ```bash
-  streamlit run app/app.py --server.port 8502
-  ```
+**Docker Benefits**:
+- ✅ No manual Python/dependency installation
+- ✅ Consistent environment across all systems
+- ✅ Easy deployment to cloud platforms (AWS, GCP, Azure)
+- ✅ Built-in health checks and auto-restart
+- ✅ Completely isolated from host system
 
 ---
 
@@ -115,6 +95,31 @@ run_app.bat           # Windows
 
 ---
 
+## Application Workflow
+
+```mermaid
+flowchart LR
+    A["📁 Raw Data<br/>YC + Crunchbase<br/>4,974 companies"] --> B["⚙️ Preprocessing<br/>Merge & Cache<br/>(.pkl, .parquet)"]
+    B --> C["🔧 Feature Engineering<br/>Temporal, Financial,<br/>Geographic, Team, Text"]
+    C --> D["🖥️ Streamlit App<br/>5 Interactive Pages"]
+    D --> E["📊 Visualizations<br/>Charts & Filters"]
+    D --> F["🤖 ML Models<br/>XGBoost/LightGBM"]
+    E --> G["🌐 Browser Dashboard<br/>localhost:8501"]
+    F --> G
+    
+    style A fill:#6C5CE7,stroke:#333,stroke-width:2px,color:#fff
+    style B fill:#00b894,stroke:#333,stroke-width:2px,color:#fff
+    style C fill:#00b894,stroke:#333,stroke-width:2px,color:#fff
+    style D fill:#74b9ff,stroke:#333,stroke-width:2px,color:#fff
+    style E fill:#fdcb6e,stroke:#333,stroke-width:2px,color:#333
+    style F fill:#fd79a8,stroke:#333,stroke-width:2px,color:#fff
+    style G fill:#2d3436,stroke:#333,stroke-width:3px,color:#fff
+```
+
+**Key Pages**: 🏠 Home | 🔍 Data Explorer | 📊 Model Performance | 🎯 Interactive Prediction | 🌍 Regional Analysis
+
+---
+
 ## Application Features
 
 1. **Home** - Dataset statistics & class distribution
@@ -125,22 +130,71 @@ run_app.bat           # Windows
 
 ---
 
+## Jupyter Notebooks
+
+The `notebooks/` directory contains detailed analysis and model development:
+
+### 📊 `01_data_analysis_and_eda.ipynb`
+- **Purpose**: Comprehensive exploratory data analysis
+- **Contents**:
+  - Data loading and merging (YC + Crunchbase)
+  - Missing value analysis
+  - Target variable distribution and class imbalance
+  - Feature distributions (numerical and categorical)
+  - Success rate analysis by industry and region
+  - Correlation analysis and feature relationships
+
+### 🤖 `02_model_training.ipynb`
+- **Purpose**: Complete model training pipeline
+- **Contents**:
+  - Feature preprocessing and encoding
+  - Train-test split with stratification
+  - SMOTE for handling class imbalance
+  - Training multiple models (Logistic Regression, Random Forest, Gradient Boosting)
+  - Model comparison and evaluation
+  - Detailed metrics (Accuracy, Precision, Recall, F1, ROC-AUC)
+  - Confusion matrices and ROC curves
+  - Feature importance analysis
+  - Cross-validation results
+
+**To run the notebooks**:
+```bash
+# Install Jupyter (if not already installed)
+pip install jupyter
+
+# Launch Jupyter Lab
+jupyter lab
+
+# Or Jupyter Notebook
+jupyter notebook
+```
+
+---
+
 ## Project Structure
 
 ```
 7180_final_project/
 ├── app/
 │   ├── app.py              # Streamlit application
-│   └── data_config.py      # Data loading
+│   └── data_config.py      # Data loading configuration
 ├── src/
-│   ├── data/               # Preprocessing
+│   ├── data/               # Preprocessing modules
 │   ├── features/           # Feature engineering & text processing
-│   ├── models/             # Training & evaluation
+│   ├── models/             # Model training & evaluation
 │   └── visualization/      # Plotting functions
+├── notebooks/
+│   ├── 01_data_analysis_and_eda.ipynb     # Exploratory data analysis
+│   └── 02_model_training.ipynb             # Model training & evaluation
 ├── data/
-│   ├── raw/                # Raw datasets
-│   └── processed/          # Preprocessed data
-└── requirements.txt        # Dependencies
+│   ├── raw/                # Raw YC and Crunchbase datasets
+│   └── processed/          # Preprocessed cached data (.pkl, .parquet)
+├── Dockerfile              # Docker container configuration
+├── docker-compose.yml      # Docker Compose setup
+├── .dockerignore           # Docker build exclusions
+├── requirements.txt        # Python dependencies
+├── preprocess_data.py      # Data preprocessing script
+└── README.md               # Project documentation
 ```
 
 ---
